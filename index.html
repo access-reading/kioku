@@ -68,7 +68,7 @@
     .category-badge { display: none; }
 
     .q-number { font-size: .8rem; color: #aaa; margin-bottom: 4px; font-weight: 700; }
-    .q-text   { font-size: 1rem; line-height: 1.7; margin-bottom: 16px; font-weight: 700; min-height: 3.4rem; text-wrap: balance; word-break: auto-phrase; }
+    .q-text   { font-size: 1rem; line-height: 1.7; margin-bottom: 16px; font-weight: 700; min-height: 3.4rem; }
 
     .scale-buttons {
       display: grid;
@@ -506,7 +506,19 @@ function renderQuestion() {
   // question（シャッフル順で表示）
   const qIdx = questionOrder[current];
   document.getElementById("q-number").textContent = `Q${current + 1}`;
-  document.getElementById("q-text").textContent    = QUESTIONS[qIdx];
+  // 設問の最後の2文字はセットで折り返す（2行目が1文字だけになるのを防ぐ）
+  const qStr = QUESTIONS[qIdx];
+  const qEl  = document.getElementById("q-text");
+  qEl.textContent = "";
+  if (qStr.length > 2) {
+    qEl.appendChild(document.createTextNode(qStr.slice(0, -2)));
+    const tail = document.createElement("span");
+    tail.style.whiteSpace = "nowrap";
+    tail.textContent = qStr.slice(-2);
+    qEl.appendChild(tail);
+  } else {
+    qEl.textContent = qStr;
+  }
 
   // scale buttons
   const container = document.getElementById("scale-buttons");
@@ -524,8 +536,8 @@ function renderQuestion() {
   const allAnswered = answers.every(a => a !== null);
   const currentAnswered = answers[questionOrder[current]] !== null;
   document.getElementById("btn-prev").disabled = current === 0;
-  document.getElementById("btn-next").style.display = (isLast && allAnswered) ? "none" : "inline-block";
-  document.getElementById("btn-next").disabled = isLast || !currentAnswered;
+  document.getElementById("btn-next").style.display = isLast ? "none" : "inline-block";
+  document.getElementById("btn-next").disabled = !currentAnswered;
 
   document.getElementById("btn-submit").style.display       = allAnswered ? "block" : "none";
   document.getElementById("all-answered-msg").style.display = allAnswered ? "block" : "none";
@@ -610,7 +622,6 @@ function checkResultHash() {
   const params = Object.fromEntries(hash.split('&').map(p => p.split('=')));
   if (!params.s || !params.d) return;
 
-  if (!/^\d{8}$/.test(params.d)) return;
   const y = params.d.slice(0,4), m = params.d.slice(4,6), day = params.d.slice(6,8);
   // ローカル日付で比較する（診断日もローカル基準で記録しているため）
   const saved = new Date(Number(y), Number(m) - 1, Number(day));
@@ -631,7 +642,6 @@ function checkResultHash() {
 }
 
 document.addEventListener("DOMContentLoaded", checkResultHash);
-window.addEventListener("hashchange", checkResultHash);
 
 // ─────────────────────────────────────────
 // RADAR CHART
@@ -648,7 +658,7 @@ function drawRadar(scores) {
   const n = 8;
   const levels = 6;
   const outerR = Math.min(W, H) * 0.38;
-  const labelR = outerR + Math.max(18, outerR * 0.18);
+  const labelR = outerR + 22;
 
   ctx.clearRect(0, 0, W, H);
 
