@@ -524,8 +524,8 @@ function renderQuestion() {
   const allAnswered = answers.every(a => a !== null);
   const currentAnswered = answers[questionOrder[current]] !== null;
   document.getElementById("btn-prev").disabled = current === 0;
-  document.getElementById("btn-next").style.display = isLast ? "none" : "inline-block";
-  document.getElementById("btn-next").disabled = !currentAnswered;
+  document.getElementById("btn-next").style.display = (isLast && allAnswered) ? "none" : "inline-block";
+  document.getElementById("btn-next").disabled = isLast || !currentAnswered;
 
   document.getElementById("btn-submit").style.display       = allAnswered ? "block" : "none";
   document.getElementById("all-answered-msg").style.display = allAnswered ? "block" : "none";
@@ -610,6 +610,7 @@ function checkResultHash() {
   const params = Object.fromEntries(hash.split('&').map(p => p.split('=')));
   if (!params.s || !params.d) return;
 
+  if (!/^\d{8}$/.test(params.d)) return;
   const y = params.d.slice(0,4), m = params.d.slice(4,6), day = params.d.slice(6,8);
   // ローカル日付で比較する（診断日もローカル基準で記録しているため）
   const saved = new Date(Number(y), Number(m) - 1, Number(day));
@@ -630,6 +631,7 @@ function checkResultHash() {
 }
 
 document.addEventListener("DOMContentLoaded", checkResultHash);
+window.addEventListener("hashchange", checkResultHash);
 
 // ─────────────────────────────────────────
 // RADAR CHART
@@ -646,7 +648,7 @@ function drawRadar(scores) {
   const n = 8;
   const levels = 6;
   const outerR = Math.min(W, H) * 0.38;
-  const labelR = outerR + 22;
+  const labelR = outerR + Math.max(18, outerR * 0.18);
 
   ctx.clearRect(0, 0, W, H);
 
